@@ -1,0 +1,24 @@
+services:
+  claude-mymotor:
+    build:
+      context: .
+      args:
+        TARGETARCH: arm64
+    container_name: multica-claude-mymotor
+    environment:
+      - MULTICA_SERVER_URL=https://zap-multica.zoop.tools
+      - MULTICA_APP_URL=https://zap-multica.zoop.tools
+      - MULTICA_TOKEN=${MYMOTOR_MULTICA_TOKEN}
+      - MULTICA_WORKSPACE_ID=${MYMOTOR_WORKSPACE_ID}
+      - MULTICA_DAEMON_DEVICE_NAME=docker-mymotor
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - claude-auth-mymotor:/home/agent/.claude
+      - mymotor-workspaces:/home/agent/multica_workspaces
+    restart: unless-stopped
+
+volumes:
+  claude-auth-mymotor:
+  mymotor-workspaces:
