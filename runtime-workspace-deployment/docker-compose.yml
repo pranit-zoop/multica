@@ -16,9 +16,11 @@ services:
       - 8.8.4.4
     volumes:
       - claude-auth-mymotor:/home/agent/.claude
+      - multica-state-mymotor:/home/agent/.multica
       - mymotor-workspaces:/home/agent/multica_workspaces
     restart: unless-stopped
 
 volumes:
   claude-auth-mymotor:
+  multica-state-mymotor:
   mymotor-workspaces:
