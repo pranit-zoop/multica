@@ -28,8 +28,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     librsvg2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code
-RUN npm install -g @anthropic-ai/claude-code
+# Install AI agent CLIs detected by the Multica daemon
+RUN npm install -g \
+    @anthropic-ai/claude-code \
+    @openai/codex \
+    opencode-ai
 
 # Pre-install commonly used global npm tooling so agent skills don't cold-start install on every task
 RUN npm install -g \
@@ -50,11 +53,18 @@ RUN MULTICA_VERSION=0.2.15 && \
 
 # Create non-root user (claude refuses to run as root with bypassPermissions)
 RUN useradd -m -s /bin/bash agent
-RUN mkdir -p /home/agent/.multica /home/agent/.claude /home/agent/multica_workspaces && \
+RUN mkdir -p \
+    /home/agent/.multica \
+    /home/agent/.claude \
+    /home/agent/.codex \
+    /home/agent/.config/opencode \
+    /home/agent/.local/share/opencode \
+    /home/agent/multica_workspaces && \
     chown -R agent:agent /home/agent
 
 # Allow agent scripts to resolve globally-installed npm packages from any CWD
 ENV NODE_PATH=/usr/local/lib/node_modules
+ENV CODEX_HOME=/home/agent/.codex
 
 COPY claude-settings.json /claude-settings.json
 COPY entrypoint.sh /entrypoint.sh

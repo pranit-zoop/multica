@@ -1,13 +1,12 @@
-# Multica Claude Daemon — Docker Setup
+# Multica Agent Daemon — Docker Setup
 
-Two Docker containers each running a Multica Claude daemon. Both watch **all workspaces** (innovation + mymotor) and compete to claim tasks, giving 2 parallel runners per workspace.
+Docker setup for a Multica daemon runner with Claude Code, Codex CLI, and OpenCode CLI installed. The daemon auto-detects available CLIs on `PATH` and registers a runtime for each authenticated tool.
 
 | Container | Device Name |
 |---|---|
-| `multica-claude-runner-1` | docker-runner-1 |
-| `multica-claude-runner-2` | docker-runner-2 |
+| `multica-claude-mymotor` | docker-mymotor |
 
-> **How task claiming works:** The daemon is designed to watch all workspaces a token has access to. When a task comes in, whichever runner claims it first executes it — no duplicate execution.
+> **How task claiming works:** If you run multiple daemon containers for the same workspace, whichever runner claims a task first executes it — no duplicate execution.
 
 ## Prerequisites
 
@@ -21,23 +20,35 @@ Two Docker containers each running a Multica Claude daemon. Both watch **all wor
 docker compose up --build -d
 ```
 
-**2. Authenticate Claude (one-time)**
+**2. Authenticate agent CLIs (one-time)**
 
-Claude uses OAuth — no API key needed. Log in once and the credentials are shared across both containers via the `claude-auth` volume:
+Claude uses OAuth — no API key needed. Log in once and the credentials persist in the `claude-auth-mymotor` volume:
 
 ```bash
-docker exec -it multica-claude-runner-1 claude auth login
+docker exec -it multica-claude-mymotor claude auth login
 ```
 
 Follow the browser URL printed in the terminal.
 
-**3. Verify both runners are connected**
+Codex credentials persist in the `codex-auth-mymotor` volume:
+
+```bash
+docker exec -it multica-claude-mymotor codex login
+```
+
+OpenCode credentials persist in the `opencode-config-mymotor` and `opencode-data-mymotor` volumes:
+
+```bash
+docker exec -it multica-claude-mymotor opencode auth login
+```
+
+**3. Verify the runner is connected**
 
 ```bash
 docker compose logs -f
 ```
 
-Both should show `watching workspace` lines for innovation and mymotor.
+Logs should show daemon startup and runtime registration for each authenticated CLI.
 
 ## Common commands
 
@@ -48,8 +59,8 @@ docker compose up -d
 # Stop
 docker compose down
 
-# Tail logs for a specific runner
-docker compose logs -f claude-runner-1
+# Tail logs
+docker compose logs -f claude-mymotor
 
 # Rebuild after config changes
 docker compose up --build -d
@@ -59,21 +70,19 @@ docker compose up --build -d
 
 ```
 docker-compose.yml
-├── claude-runner-1  ──► multica daemon → innovation + mymotor workspaces
-└── claude-runner-2  ──► multica daemon → innovation + mymotor workspaces
-        │                      │
-        └──────────────────────┘
-             shared claude-auth volume (~/.claude)
-             OAuth credentials used by both runners
+└── claude-mymotor ──► multica daemon → configured workspace
+        ├── Claude Code credentials (~/.claude)
+        ├── Codex credentials (~/.codex)
+        └── OpenCode credentials (~/.config/opencode, ~/.local/share/opencode)
 ```
 
-Each runner has its own isolated workspace volume for cloned repos and task outputs.
+The runner has an isolated workspace volume for cloned repos and task outputs.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Installs Claude Code + multica v0.2.15 on `node:20-slim` |
+| `Dockerfile` | Installs Claude Code, Codex CLI, OpenCode CLI, and multica v0.2.15 on `node:20-slim` |
 | `entrypoint.sh` | Generates multica config from env vars, seeds Claude settings, starts daemon |
 | `claude-settings.json` | Claude settings (`model: sonnet`, bypass permission prompts) |
 | `.env` | Multica token and config — **do not commit** |

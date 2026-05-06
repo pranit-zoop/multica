@@ -16,11 +16,17 @@ services:
       - 8.8.4.4
     volumes:
       - claude-auth-mymotor:/home/agent/.claude
+      - codex-auth-mymotor:/home/agent/.codex
+      - opencode-config-mymotor:/home/agent/.config/opencode
+      - opencode-data-mymotor:/home/agent/.local/share/opencode
       - multica-state-mymotor:/home/agent/.multica
       - mymotor-workspaces:/home/agent/multica_workspaces
     restart: unless-stopped
 
 volumes:
   claude-auth-mymotor:
+  codex-auth-mymotor:
+  opencode-config-mymotor:
+  opencode-data-mymotor:
   multica-state-mymotor:
   mymotor-workspaces:
